@@ -18,6 +18,7 @@ jobs:
 
       - name: Generate ToC for all Markdown files
         run: |
+          # Generate TOC.md with links to all markdown files
           echo "## Table of Contents" > TOC.md
           echo "" >> TOC.md
           find . -type f -name "*.md" | while read file; do
@@ -26,7 +27,7 @@ jobs:
 
       - name: Remove old ToC from README.md
         run: |
-          # Remove any existing ToC from README.md (assumes it's inside a comment or special section)
+          # Remove any existing Table of Contents from README.md
           sed -i '/## Table of Contents/,/^$/d' README.md
 
       - name: Import new TOC into README.md
@@ -35,13 +36,13 @@ jobs:
           TOC_CONTENT=$(cat TOC.md)
           README_CONTENT=$(cat README.md)
 
-          # Insert the TOC content above the first heading (or at the top)
+          # Check if README.md already contains a heading
           if grep -q "^#" <<< "$README_CONTENT"; then
-            # Use printf to insert the TOC at the beginning or before the first heading
-            NEW_README=$(echo "$README_CONTENT" | sed "0,/^#/s/^#/## Table of Contents\n\n$TOC_CONTENT\n\n#/")
+            # Insert TOC content above the first heading (or at the top)
+            NEW_README=$(echo "$README_CONTENT" | awk 'BEGIN{print "## Table of Contents\n"} {print} /#/{print "'"$TOC_CONTENT"'"}' )
           else
             # If no heading is found, insert TOC at the top of the file
-            NEW_README="$TOC_CONTENT\n\n$README_CONTENT"
+            NEW_README="## Table of Contents\n\n$TOC_CONTENT\n\n$README_CONTENT"
           fi
 
           # Write the updated README.md back
