@@ -1,17 +1,22 @@
-name: Generate Table of Contents for Files
+name: Generate and Import ToC into README
 
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
+
 jobs:
   generate-toc:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Generate ToC for files
+      - name: Generate ToC for all Markdown files
         run: |
           echo "## Table of Contents" > TOC.md
           echo "" >> TOC.md
@@ -19,8 +24,31 @@ jobs:
             echo "- [$file]($file)" >> TOC.md
           done
 
+      - name: Remove old ToC from README.md
+        run: |
+          # Remove any existing ToC from README.md (assumes it's inside a comment or special section)
+          sed -i '/## Table of Contents/,/^$/d' README.md
+
+      - name: Import new TOC into README.md
+        run: |
+          # Insert TOC content into README.md
+          TOC_CONTENT=$(cat TOC.md)
+          README_CONTENT=$(cat README.md)
+
+          # Insert TOC above the first heading in README.md or at the top
+          if grep -q "^#" <<< "$README_CONTENT"; then
+            NEW_README=$(echo "$README_CONTENT" | sed "0,/^#/s/^#/## Table of Contents\n\n$TOC_CONTENT\n\n#/")
+          else
+            NEW_README="$TOC_CONTENT\n\n$README_CONTENT"
+          fi
+
+          # Save the updated README.md with the imported ToC
+          echo "$NEW_README" > README.md
+
+      - name: Commit changes
+        run: |
           git config --global user.name 'GitHub Actions'
           git config --global user.email 'actions@github.com'
-          git add TOC.md
-          git commit -m "Update Table of Contents"
-          git push
+          git add README.md
+          git commit -m "Import and update Table of Contents"
+          git push origin HEAD:main
