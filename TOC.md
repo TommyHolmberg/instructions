@@ -1,3 +1,3 @@
-- [./README.md](./README.md)
-- [./TOC.md](./TOC.md)
-- [./UpgradeMySQL5To8.md](./UpgradeMySQL5To8.md)
+- [README.md](./README.md)
+- [TOC.md](./TOC.md)
+- [UpgradeMySQL5To8.md](./UpgradeMySQL5To8.md)

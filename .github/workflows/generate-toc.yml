@@ -15,7 +15,9 @@ jobs:
         run: |
           # Generate TOC.md with links to all markdown files
           find . -type f -name "*.md" | sort | while read file; do
-              echo "- [$file]($file)"
+              # Remove leading ./ for display, but keep it for the link
+              display_name=$(echo "$file" | sed 's|^\./||')
+              echo "- [$display_name]($file)"
           done > TOC.md
 
           # Remove old ToC and insert new one in README.md
