@@ -1,5 +1,4 @@
 name: Generate and Import ToC into README
-
 on:
   push:
     branches:
@@ -7,45 +6,53 @@ on:
   pull_request:
     branches:
       - main
-
 jobs:
   generate-toc:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-
-      - name: Generate ToC for all Markdown files
+      - name: Generate and update ToC
         run: |
           # Generate TOC.md with links to all markdown files
-          echo "" > TOC.md
-          find . -type f -name "*.md" | while read file; do
-            echo "- [$file]($file)" >> TOC.md
-          done
+          find . -type f -name "*.md" | sort | while read file; do
+              echo "- [$file]($file)"
+          done > TOC.md
 
-      - name: Remove old ToC from README.md
-        run: |
-          # Remove any existing Table of Contents from README.md
-          sed -i '/## Table of Contents/,/^$/d' README.md
-
-      - name: Import new TOC into README.md
-        run: |
-          TOC_CONTENT=$(cat TOC.md)
-
-          # Insert TOC_CONTENT after the '## Table of Contents' section in README.md
-          awk -v TOC="$TOC_CONTENT" '
-            /## Table of Contents/ { 
-              print $0 "\n" TOC; 
-              next 
-            }
-            { print }
-          ' README.md > README.md.temp && mv README.md.temp README.md
-
+          # Remove old ToC and insert new one in README.md
+          awk '
+              BEGIN { 
+                  in_toc = 0 
+                  toc = ""
+              }
+              # Read TOC.md content into variable
+              BEGINFILE { 
+                  if (FILENAME == "TOC.md") {
+                      while ((getline line < "TOC.md") > 0) {
+                          toc = toc line "\n"
+                      }
+                      nextfile
+                  }
+              }
+              # Process README.md
+              /^[#]{2} Table of Contents/ {
+                  print
+                  print toc
+                  print ""
+                  in_toc = 1
+                  next
+              }
+              in_toc && /^[#]/ {
+                  in_toc = 0
+              }
+              !in_toc {
+                  print
+              }
+          ' TOC.md README.md > tmp && mv tmp README.md
       - name: Commit changes
         run: |
           git config --global user.name 'GitHub Actions'
           git config --global user.email 'actions@github.com'
           git add README.md
-          git commit -m "Import and update Table of Contents"
+          git commit -m "Update Table of Contents"
           git push origin HEAD:main
