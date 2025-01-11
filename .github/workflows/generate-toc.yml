@@ -31,18 +31,20 @@ jobs:
 
       - name: Import new TOC into README.md
         run: |
-          # Insert TOC content into README.md
+          # Read the content of TOC.md and README.md
           TOC_CONTENT=$(cat TOC.md)
           README_CONTENT=$(cat README.md)
 
-          # Insert TOC above the first heading in README.md or at the top
+          # Insert the TOC content above the first heading (or at the top)
           if grep -q "^#" <<< "$README_CONTENT"; then
+            # Use printf to insert the TOC at the beginning or before the first heading
             NEW_README=$(echo "$README_CONTENT" | sed "0,/^#/s/^#/## Table of Contents\n\n$TOC_CONTENT\n\n#/")
           else
+            # If no heading is found, insert TOC at the top of the file
             NEW_README="$TOC_CONTENT\n\n$README_CONTENT"
           fi
 
-          # Save the updated README.md with the imported ToC
+          # Write the updated README.md back
           echo "$NEW_README" > README.md
 
       - name: Commit changes
