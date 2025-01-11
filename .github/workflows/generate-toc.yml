@@ -36,17 +36,20 @@ jobs:
           TOC_CONTENT=$(cat TOC.md)
           README_CONTENT=$(cat README.md)
 
+          # Escape newlines in TOC_CONTENT to safely insert into the file
+          ESCAPED_TOC=$(echo "$TOC_CONTENT" | sed ':a;N;$!ba;s/\n/\\n/g')
+
           # Check if README.md already contains a heading
           if grep -q "^#" <<< "$README_CONTENT"; then
-            # Insert TOC content above the first heading (or at the top)
-            NEW_README=$(echo "$README_CONTENT" | awk 'BEGIN{print "## Table of Contents\n"} {print} /#/{print "'"$TOC_CONTENT"'"}' )
+            # Insert TOC content above the first heading
+            NEW_README=$(echo "$README_CONTENT" | sed "0,/^#/s/^#/## Table of Contents\\n\\n$ESCAPED_TOC\\n\\n#/")
           else
             # If no heading is found, insert TOC at the top of the file
-            NEW_README="## Table of Contents\n\n$TOC_CONTENT\n\n$README_CONTENT"
+            NEW_README="## Table of Contents\\n\\n$ESCAPED_TOC\\n\\n$README_CONTENT"
           fi
 
           # Write the updated README.md back
-          echo "$NEW_README" > README.md
+          echo -e "$NEW_README" > README.md
 
       - name: Commit changes
         run: |
